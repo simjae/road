@@ -1,98 +1,97 @@
 import { StyleSheet } from 'react-native';
-import { ButtonColor } from './Colors';
+import { ButtonColors } from './Colors';
+import Typography from './Typography'; // Typography 스타일 불러오기
 
+type ButtonState = 'default' | 'hover' | 'active' | 'disabled';
+
+type GradientButtonColor = Record<ButtonState, string>;
+
+type ButtonColorsType = {
+  primary: GradientButtonColor;
+  secondary: GradientButtonColor;
+  tertiary: GradientButtonColor;
+  quaternary: GradientButtonColor;
+  outline: GradientButtonColor & { border: string }; // outline에 추가 속성 포함
+  utility: {
+    white: string;
+    black: string;
+  }; // 상태별 색상이 없는 그룹
+};
 const buttonSizeStyles = {
-    xsmall: {
-        height: 24,
-        paddingHorizontal: 8,
-    },
-    small: {
-        height: 32,
-        paddingHorizontal: 12,
-    },
-    medium: {
-        height: 40,
-        paddingHorizontal: 16,
-    },
-    large: {
-        height: 48,
-        paddingHorizontal: 20,
-    },
-};
-
-const buttonStateStyles = {
-    primary: {
-        default: ButtonColor.primary,
-        hover: ButtonColor.primaryHover,
-        active: ButtonColor.primaryActive,
-        disabled: ButtonColor.primaryDisabled,
-    },
-    secondary: {
-        default: ButtonColor.secondary,
-        hover: ButtonColor.secondaryHover,
-        active: ButtonColor.secondaryActive,
-        disabled: ButtonColor.secondaryDisabled,
-    },
-    tertiary: {
-        default: ButtonColor.tertiary,
-        hover: ButtonColor.tertiaryHover,
-        active: ButtonColor.tertiaryActive,
-        disabled: ButtonColor.tertiaryDisabled,
-    },
-    quaternary: {
-        default: ButtonColor.quaternary,
-        hover: ButtonColor.quaternaryHover,
-        active: ButtonColor.quaternaryActive,
-        disabled: ButtonColor.quaternaryDisabled,
-    },
-    outline: {
-        default: ButtonColor.outline,
-        hover: ButtonColor.outlineHover,
-        active: ButtonColor.outlineActive,
-        disabled: ButtonColor.outlineDisabled,
-    },
-};
+  xsmall: {
+    height: 24,
+    paddingHorizontal: 8,
+  },
+  small: {
+    height: 32,
+    paddingHorizontal: 12,
+  },
+  medium: {
+    height: 40,
+    paddingHorizontal: 16,
+  },
+  large: {
+    height: 48,
+    paddingHorizontal: 20,
+  },
+} as const;
 
 const buttonRadiusStyles = {
-    rounded: 30,
-    square: 8,
+  rounded: 30,
+  square: 8,
+} as const;
+
+const getButtonStateColor = ({
+  bg,
+  state,
+}: {
+  bg: keyof typeof ButtonColors;
+  state: ButtonState;
+}) => {
+  const buttonGroup = ButtonColors[bg];
+
+  // 상태별 색상을 지원하지 않는 그룹(utility)은 기본값 반환
+  if (bg === 'utility' || !('default' in buttonGroup)) {
+    return ButtonColors.utility.white;
+  }
+
+  // 상태별 색상을 지원하는 그룹 처리
+  return (buttonGroup as GradientButtonColor)[state] || ButtonColors.utility.white;
 };
 
-export const buttonStyles = ({
-    size = 'medium',
-    state = 'default',
-    bg = 'primary',
-    radius = 'rounded',
-}: {
-    size?: keyof typeof buttonSizeStyles;
-    state?: 'default' | 'hover' | 'active' | 'disabled';
-    bg?: keyof typeof buttonStateStyles;
-    radius?: keyof typeof buttonRadiusStyles;
-}) => {
-    const sizeStyles = buttonSizeStyles[size];
-    const stateStyles = buttonStateStyles[bg][state];
-    const radiusStyles = buttonRadiusStyles[radius];
 
-    return StyleSheet.create({
-        button: {
-            ...sizeStyles,
-            backgroundColor: bg === 'outline' ? ButtonColor.white : stateStyles,
-            borderRadius: radiusStyles,
-            justifyContent: 'center',
-            alignItems: 'center',
-            borderWidth: bg === 'outline' ? 1 : 0,
-            borderColor:
-                bg === 'outline'
-                    ? buttonStateStyles.outline[state]
-                    : 'transparent',
-        },
-        buttonText: {
-            fontSize: 16,
-            fontWeight: '700',
-            color:
-                bg === 'outline'
-                    ? buttonStateStyles.outline[state]
-                    : ButtonColor.white,
-        },
-    });
+export const buttonStyles = ({
+  size = 'medium',
+  state = 'default',
+  bg = 'primary',
+  radius = 'rounded',
+  textStyle = 'bodyMedium', // Typography에서 사용할 텍스트 스타일
+}: {
+  size?: keyof typeof buttonSizeStyles;
+  state?: 'default' | 'hover' | 'active' | 'disabled';
+  bg?: keyof typeof ButtonColors;
+  radius?: keyof typeof buttonRadiusStyles;
+  textStyle?: keyof typeof Typography; // Typography의 키를 사용
+}) => {
+  const sizeStyles = buttonSizeStyles[size];
+  const borderRadius = buttonRadiusStyles[radius];
+  const backgroundColor = bg === 'outline' ? 'transparent' : getButtonStateColor({ bg, state });
+  const borderColor = bg === 'outline' ? getButtonStateColor({ bg: 'outline', state }) : 'transparent';
+  const textColor = bg === 'outline' ? borderColor : ButtonColors.utility.white;
+
+  return StyleSheet.create({
+    button: {
+      ...sizeStyles,
+      backgroundColor,
+      borderRadius,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: bg === 'outline' ? 1 : 0,
+      borderColor,
+    },
+    buttonText: {
+      ...Typography[textStyle], // Typography에서 텍스트 스타일 가져오기
+      color: textColor, // 텍스트 색상은 버튼 스타일에 따라 동적으로 변경
+    },
+  });
 };
